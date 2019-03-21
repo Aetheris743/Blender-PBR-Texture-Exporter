@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 0, 1),
+    "version" : (1, 0, 2),
     "description" :
             "Export Blender Scenes",
 }
@@ -22,10 +22,9 @@ class BakeObjects(bpy.types.Operator):
 
     def execute(self, context):
         
-        #save before starting
         bpy.ops.wm.save_mainfile(filepath=bpy.data.filepath)       
-        
-        
+
+        context.scene.render.engine = "CYCLES"
         
         view_layer = bpy.context.view_layer
 
@@ -43,13 +42,8 @@ class BakeObjects(bpy.types.Operator):
             bpy.context.scene.render.bake.use_pass_indirect = True
         
         for obj in selection:
-            #iterate through each object
             
             bpy.ops.object.select_all(action='DESELECT')
-            #types 
-            #COMBINED', 'AO', 'SHADOW', 'NORMAL', 
-            #'UV', 'ROUGHNESS', 'EMIT', 'ENVIRONMENT', 'DIFFUSE', 
-            #'GLOSSY', 'TRANSMISSION', 'SUBSURFACE'
             obj.select_set(True)            
                 
             if (options.use_diffuse == True):
@@ -180,7 +174,6 @@ def SetupMaterialExport(obj):
 
 
 def ConfigureMaterials(obj, texture_type):
-    #create texture
 
     resoulution = int(bpy.context.window_manager.all_export_settings.texture_resoulution)
 
@@ -237,7 +230,6 @@ class ExportPanel(bpy.types.Panel):
         row.prop(options.all_export_settings, "texture_resoulution", expand=True)
         
         row = layout.row()
-        ##whitespace
         
         row = layout.row()
         row.prop(options.all_export_settings, "seperate_objects")
