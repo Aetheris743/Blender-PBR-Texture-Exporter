@@ -127,7 +127,7 @@ class BakeObjects(bpy.types.Operator):
             SelectObjects(selection)
             bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
             
-        #bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
+        bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
                 
         return {'FINISHED'} 
 
