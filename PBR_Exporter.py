@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 0, 3),
+    "version" : (1, 0, 4),
     "description" :
             "Export Blender Objects and Textures",
 }
@@ -35,93 +35,95 @@ class BakeObjects(bpy.types.Operator):
         
         for obj in selection:
             
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)            
-                 
-            if (options.use_normal == True):
-                ConfigureMaterials(obj, "Normal")
-                print("starting normal bake: " + obj.name)
-                bpy.ops.object.bake(type="NORMAL")
+            if obj.type == "MESH":
             
-                SaveImage(obj, "Normal")
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)            
+                     
+                if options.use_normal == True:
+                    ConfigureMaterials(obj, "Normal")
+                    print("starting normal bake: " + obj.name)
+                    bpy.ops.object.bake(type="NORMAL")
                 
+                    SaveImage(obj, "Normal")
                     
-            if (options.use_rough == True):
-                ConfigureMaterials(obj, "Roughness")
-                print("starting roughness bake: " + obj.name)
-                bpy.ops.object.bake(type="ROUGHNESS")
-            
-                SaveImage(obj, "Roughness")
-                
                         
-            if (options.use_emit == True):
-                ConfigureMaterials(obj, "Emission")
-                print("starting emission bake: " + obj.name)
-                bpy.ops.object.bake(type="EMIT")
-            
-                SaveImage(obj, "Emission")
+                if options.use_rough == True:
+                    ConfigureMaterials(obj, "Roughness")
+                    print("starting roughness bake: " + obj.name)
+                    bpy.ops.object.bake(type="ROUGHNESS")
                 
+                    SaveImage(obj, "Roughness")
                     
-            if (options.use_combined == True):
-                bpy.context.scene.render.bake.use_pass_direct = True
-                bpy.context.scene.render.bake.use_pass_indirect = True
-            
-                ConfigureMaterials(obj, "Combined")
-                print("starting combined bake: " + obj.name)
-                bpy.ops.object.bake(type="COMBINED")
-            
-                SaveImage(obj, "Combined")
-                
-                bpy.context.scene.render.bake.use_pass_direct = False
-                bpy.context.scene.render.bake.use_pass_indirect = False
-            
-            if (options.use_metal == True):
-                
-                if SetToEmissive(obj, principled_input="Metallic"):
-                    ConfigureMaterials(obj, "Metalness")
-                    print("starting metalic bake: " + obj.name)
+                            
+                if options.use_emit == True:
+                    ConfigureMaterials(obj, "Emission")
+                    print("starting emission bake: " + obj.name)
                     bpy.ops.object.bake(type="EMIT")
                 
-                    #SaveImage(obj, "Metalness")
-                else:
-                    ConfigureMaterials(obj, "Metalness")
-                    print("starting gloss bake: " + obj.name)
-                    bpy.ops.object.bake(type="GLOSSY")
-                
-                    SaveImage(obj, "Metalness")
+                    SaveImage(obj, "Emission")
                     
-            if (options.use_albedo == True):
-                if SetToEmissive(obj):
-                    ConfigureMaterials(obj, "Albedo")
-                    print("starting albedo bake: " + obj.name)
-                    bpy.ops.object.bake(type="EMIT")
+                        
+                if options.use_combined == True:
+                    bpy.context.scene.render.bake.use_pass_direct = True
+                    bpy.context.scene.render.bake.use_pass_indirect = True
                 
-                    SaveImage(obj, "Albedo")
-                else:
-                    ConfigureMaterials(obj, "Albedo")
-                    print("starting diffuse bake: " + obj.name)
-                    bpy.ops.object.bake(type="DIFFUSE")
+                    ConfigureMaterials(obj, "Combined")
+                    print("starting combined bake: " + obj.name)
+                    bpy.ops.object.bake(type="COMBINED")
                 
-                    SaveImage(obj, "Albedo")
+                    SaveImage(obj, "Combined")
                     
-            
-            try:
-                ReconfigureMaterials(obj)
-            except:
-                print("Failed to reconfigure materials on", obj.name)
-            
-               
-        for obj in selection:            
-            bpy.ops.object.select_all(action='DESELECT')
-            obj.select_set(True)
-            SetupMaterialExport(obj)
-            
-            if (options.seperate_objects == True):
-                path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
+                    bpy.context.scene.render.bake.use_pass_direct = False
+                    bpy.context.scene.render.bake.use_pass_indirect = False
                 
-                bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                if options.use_metal == True:
+                    
+                    if SetToEmissive(obj, principled_input="Metallic"):
+                        ConfigureMaterials(obj, "Metalness")
+                        print("starting metalic bake: " + obj.name)
+                        bpy.ops.object.bake(type="EMIT")
+                    
+                        SaveImage(obj, "Metalness")
+                    else:
+                        ConfigureMaterials(obj, "Metalness")
+                        print("starting gloss bake: " + obj.name)
+                        bpy.ops.object.bake(type="GLOSSY")
+                    
+                        SaveImage(obj, "Metalness")
+                        
+                if options.use_albedo == True:
+                    if SetToEmissive(obj):
+                        ConfigureMaterials(obj, "Albedo")
+                        print("starting albedo bake: " + obj.name)
+                        bpy.ops.object.bake(type="EMIT")
+                    
+                        SaveImage(obj, "Albedo")
+                    else:
+                        ConfigureMaterials(obj, "Albedo")
+                        print("starting diffuse bake: " + obj.name)
+                        bpy.ops.object.bake(type="DIFFUSE")
+                    
+                        SaveImage(obj, "Albedo")
+                        
+                
+                try:
+                    ReconfigureMaterials(obj)
+                except:
+                    print("Failed to reconfigure materials on", obj.name)
+                
+                   
+            for obj in selection:            
+                bpy.ops.object.select_all(action='DESELECT')
+                obj.select_set(True)
+                SetupMaterialExport(obj)
+                
+                if options.seperate_objects == True:
+                    path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
+                    
+                    bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
             
-        if (options.seperate_objects == False):
+        if options.seperate_objects == False:
             path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0]+ "\\" + bpy.data.filepath.split("\\")[-1].split(".")[0]
             print(path)
             SelectObjects(selection)
@@ -155,13 +157,13 @@ def SetToEmissive(obj, principled_input="Base Color"):
             if test == False:
                 input = principled.inputs[principled_input]
                 type = input.type
-                if (type == "VALUE"):
+                if type == "VALUE":
                     emission.inputs[0].default_value = (input.default_value, input.default_value, input.default_value, 1)
-                if (type == "RGBA"):
+                if type == "RGBA":
                     emission.inputs[0].default_value = input.default_value
             
             mat.material.node_tree.links.new(output.inputs[0], emission.outputs[0])
-            if (test == True):
+            if test == True:
                 mat.material.node_tree.links.new(emission.inputs[0], node)
         return True
     except:
@@ -178,7 +180,7 @@ def SaveImage(obj, texture_type):
         image.save()
     except:
         try:
-            if (bpy.context.window_manager.all_export_settings.seperate_objects == True):
+            if bpy.context.window_manager.all_export_settings.seperate_objects == True:
                 os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name)
             else:
                 os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])
@@ -200,13 +202,13 @@ def SetupMaterialExport(obj):
         
         nodetree.links.new(output, principled.outputs[0])
         
-        if (options.use_albedo == True):
+        if options.use_albedo == True:
             diffuse = nodetree.nodes.new("ShaderNodeTexImage")
             diffuse.image = bpy.data.images[obj.name+"_Albedo"]
             
             nodetree.links.new(principled.inputs["Base Color"], diffuse.outputs[0])
                 
-        if (options.use_normal == True):
+        if options.use_normal == True:
             normal = nodetree.nodes.new("ShaderNodeTexImage")
             normal.image = bpy.data.images[obj.name+"_Normal"]
             normal.color_space = "NONE"
@@ -217,14 +219,14 @@ def SetupMaterialExport(obj):
             
             nodetree.links.new(principled.inputs["Normal"], map.outputs[0])
                     
-        if (options.use_metal == True):
+        if options.use_metal == True:
             gloss = nodetree.nodes.new("ShaderNodeTexImage")
             gloss.image = bpy.data.images[obj.name+"_Metalness"]
             gloss.color_space = "NONE" 
             
             nodetree.links.new(principled.inputs["Metallic"], gloss.outputs[0])
                     
-        if (options.use_rough == True):
+        if options.use_rough == True:
             rough = nodetree.nodes.new("ShaderNodeTexImage")
             rough.image = bpy.data.images[obj.name+"_Roughness"]
             rough.color_space = "NONE"
@@ -240,7 +242,7 @@ def ConfigureMaterials(obj, texture_type):
 
     image = bpy.data.images[obj.name+"_"+texture_type]
     
-    if (bpy.context.window_manager.all_export_settings.seperate_objects == True):
+    if bpy.context.window_manager.all_export_settings.seperate_objects == True:
         subdir = bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name
     else:
         subdir = bpy.data.filepath.split("\\")[-1].split(".")[0]
