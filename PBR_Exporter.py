@@ -313,11 +313,11 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_emit: bpy.props.BoolProperty(name="Emission", default=True)    
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
 
-    seperate_objects: bpy.props.BoolProperty(name="Seperate Objects", default=False)
+    seperate_objects: bpy.props.BoolProperty(name="Separate Objects", default=False)
     
     texture_resoulution: bpy.props.EnumProperty(
         name = "Resoulution",
-        description = "Choose Texture Resoulution",
+        description = "Choose Texture Resolution",
         items = [
             ("1024", "1024", "Render a 1024 x 1024 texture"),
             ("2048", "2048", "Render a 2048 x 2048 texture"),
