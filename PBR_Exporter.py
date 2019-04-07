@@ -113,14 +113,17 @@ class BakeObjects(bpy.types.Operator):
                     print("Failed to reconfigure materials on", obj.name)
                 
                    
-            for obj in selection:            
+        for obj in selection:   
+
+            if obj.type == "MESH":   \
+                  
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
                 SetupMaterialExport(obj)
-                
+                    
                 if options.seperate_objects == True:
                     path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
-                    
+                        
                     bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
             
         if options.seperate_objects == False:
