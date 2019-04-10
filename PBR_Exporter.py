@@ -56,7 +56,7 @@ class BakeObjects(bpy.types.Operator):
         bake_number = texture_number*objnumber
         texture_percent = int(bar_size / bake_number)
         one_percent = 100 / bake_number
-        first = one_percent
+        first = int(one_percent)
         one_percent = 0
         print(one_percent)
         print(texture_percent)
@@ -253,7 +253,16 @@ def SetupMaterialExport(obj):
     options = bpy.context.window_manager.all_export_settings
     
     for mat in obj.material_slots:
-        nodetree = mat.material.node_tree
+        
+        bpy.data.materials.new(name=obj.name+"_"+mat.material.name)
+        
+        material = bpy.data.materials[obj.name+"_"+mat.material.name]
+        material.use_nodes = True
+        
+        print(material)
+        mat.material = material
+        
+        nodetree = material.node_tree
         
         principled = nodetree.nodes.new("ShaderNodeBsdfPrincipled")
         
