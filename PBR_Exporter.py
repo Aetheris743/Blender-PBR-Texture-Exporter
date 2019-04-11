@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 0, 4),
+    "version" : (1, 0, 5),
     "description" :
             "Export Blender Objects and Textures",
 }
@@ -58,13 +58,11 @@ class BakeObjects(bpy.types.Operator):
         one_percent = 100 / bake_number
         first = int(one_percent)
         one_percent = 0
-        print(one_percent)
-        print(texture_percent)
         bake_progress = 0
-        
+
+        print("Starting Texture Baking:")        
         for obj in selection:
             
-            print("Starting Texture Baking:")
             if obj.type == "MESH":
             
                 bpy.ops.object.select_all(action='DESELECT')
