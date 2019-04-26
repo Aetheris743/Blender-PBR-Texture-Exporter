@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 0, 5),
+    "version" : (1, 1, 0),
     "description" :
             "Export Blender Objects and Textures",
 }
@@ -40,6 +40,7 @@ class BakeObjects(bpy.types.Operator):
         
         texture_number = 0
         
+        
         if options.use_normal == True:
             texture_number += 1
         if options.use_rough == True:
@@ -54,131 +55,53 @@ class BakeObjects(bpy.types.Operator):
             texture_number += 1
         
         bake_number = texture_number*objnumber
-        texture_percent = int(bar_size / bake_number)
+        texture_percent = bar_size / bake_number
         one_percent = 100 / bake_number
         first = int(one_percent)
         one_percent = 0
         bake_progress = 0
+        
+        data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
 
-        print("Starting Texture Baking:")        
-        for obj in selection:
+        print("Starting Texture Baking:")    
+        
+        if (options.bake_materials == True):  
             
-            if obj.type == "MESH":
-            
-                bpy.ops.object.select_all(action='DESELECT')
-                obj.select_set(True)            
-                     
-                if options.use_normal == True:
-                    print("Baking Normal on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-
-                    ConfigureMaterials(obj, "Normal")
-                    bpy.ops.object.bake(type="NORMAL")
+             bpy.ops.mesh.primitive_plane_add(size=2)
+             bpy.context.active_object.name = "MATERIAL_BAKE_TARGET"
+             object = bpy.context.active_object
+             for material in bpy.data.materials:
+                 object.name = material.name
+                 try:
+                    object.material_slots[0].material = material
+                    BakeObjectMaterials(object, options, data)
+                 except:
+                    object.data.materials.append(material)
+                    object.material_slots[0].material = material
+                    BakeObjectMaterials(object, options, data)
+        if (options.bake_materials == False):    
+            for obj in selection:
                 
-                    SaveImage(obj, "Normal")
-                    sys.stdout = sys.__stdout__
-                    
-                    bake_progress += texture_percent
-                    one_percent += first
-                    
+                if obj.type == "MESH":
                         
-                if options.use_rough == True:
-                    print("Baking Roughness on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-                    ConfigureMaterials(obj, "Roughness")
-                    bpy.ops.object.bake(type="ROUGHNESS")
-                
-                    SaveImage(obj, "Roughness")
-                    sys.stdout = sys.__stdout__
-                    bake_progress += texture_percent
-                    one_percent += first
-                    
-                            
-                if options.use_emit == True:
-                    ConfigureMaterials(obj, "Emission")
-                    print("Baking Emission on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-                    bpy.ops.object.bake(type="EMIT")
-                
-                    SaveImage(obj, "Emission")
-                    sys.stdout = sys.__stdout__
-                    bake_progress += texture_percent
-                    one_percent += first
-                    
-                        
-                if options.use_combined == True:
-                    bpy.context.scene.render.bake.use_pass_direct = True
-                    bpy.context.scene.render.bake.use_pass_indirect = True
-                    
-                    
-                    print("Baking Combined on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-                    ConfigureMaterials(obj, "Combined")
-                    bpy.ops.object.bake(type="COMBINED")
-                
-                    SaveImage(obj, "Combined")
-                    
-                    bpy.context.scene.render.bake.use_pass_direct = False
-                    bpy.context.scene.render.bake.use_pass_indirect = False
-                    sys.stdout = sys.__stdout__
-                    bake_progress += texture_percent
-                    one_percent += first
-                
-                if options.use_metal == True:                    
-                    print("Baking Metalic on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-                    if SetToEmissive(obj, principled_input="Metallic"):
-                        ConfigureMaterials(obj, "Metalness")
-                        bpy.ops.object.bake(type="EMIT")
-                    
-                        SaveImage(obj, "Metalness")
-                    else:
-                        ConfigureMaterials(obj, "Metalness")
-                        bpy.ops.object.bake(type="GLOSSY")
-                    
-                        SaveImage(obj, "Metalness")
-                    sys.stdout = sys.__stdout__
-                    bake_progress += texture_percent
-                    one_percent += first
-                        
-                if options.use_albedo == True:
-                    print("Baking Albedo on", obj.name, "", "#"*bake_progress, "-"*(bar_size-bake_progress), str(one_percent)+"% Done", end="\r")
-                    sys.stdout = open(os.devnull, "w")
-                    if SetToEmissive(obj):
-                        ConfigureMaterials(obj, "Albedo")
-                        bpy.ops.object.bake(type="EMIT")
-                    
-                        SaveImage(obj, "Albedo")
-                    else:
-                        ConfigureMaterials(obj, "Albedo")
-                        bpy.ops.object.bake(type="DIFFUSE")
-                    
-                        SaveImage(obj, "Albedo")
-                    sys.stdout = sys.__stdout__
-                    bake_progress += texture_percent
-                    one_percent += first
-                        
-                
-                try:
-                    ReconfigureMaterials(obj)
-                except:
-                    print("Failed to reconfigure materials on", obj.name)
+                    BakeObjectMaterials(obj, options, data)
                     
         print("Baking Done                                                                                       ")
-        print(one_percent)  
-                   
+                
         for obj in selection:   
 
             if obj.type == "MESH":
                   
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
-                SetupMaterialExport(obj)
+                if (options.bake_materials == False):
+                    SetupMaterialExport(obj)
                     
                 if options.seperate_objects == True:
                     path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
                         
                     bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                
             
         if options.seperate_objects == False:
             path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0]+ "\\" + bpy.data.filepath.split("\\")[-1].split(".")[0]
@@ -190,6 +113,107 @@ class BakeObjects(bpy.types.Operator):
                 
         return {'FINISHED'} 
 
+def BakeObjectMaterials(obj, options, data):
+    bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress = data
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)            
+         
+    if options.use_normal == True:
+        print("Baking Normal on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+
+        ConfigureMaterials(obj, "Normal")
+        bpy.ops.object.bake(type="NORMAL")
+    
+        SaveImage(obj, "Normal")
+        sys.stdout = sys.__stdout__
+        
+        bake_progress += texture_percent
+        one_percent += first
+        
+            
+    if options.use_rough == True:
+        print("Baking Roughness on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        ConfigureMaterials(obj, "Roughness")
+        bpy.ops.object.bake(type="ROUGHNESS")
+    
+        SaveImage(obj, "Roughness")
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
+        
+                
+    if options.use_emit == True:
+        print("Baking Emission on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        ConfigureMaterials(obj, "Emission")
+        sys.stdout = open(os.devnull, "w")
+        bpy.ops.object.bake(type="EMIT")
+    
+        SaveImage(obj, "Emission")
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
+        
+            
+    if options.use_combined == True:
+        bpy.context.scene.render.bake.use_pass_direct = True
+        bpy.context.scene.render.bake.use_pass_indirect = True
+        
+        
+        print("Baking Combined on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        ConfigureMaterials(obj, "Combined")
+        bpy.ops.object.bake(type="COMBINED")
+    
+        SaveImage(obj, "Combined")
+        
+        bpy.context.scene.render.bake.use_pass_direct = False
+        bpy.context.scene.render.bake.use_pass_indirect = False
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
+    
+    if options.use_metal == True:
+        print("Baking Metalic on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        if SetToEmissive(obj, principled_input="Metallic"):
+            ConfigureMaterials(obj, "Metalness")
+            bpy.ops.object.bake(type="EMIT")
+        
+            SaveImage(obj, "Metalness")
+        else:
+            ConfigureMaterials(obj, "Metalness")
+            bpy.ops.object.bake(type="GLOSSY")
+        
+            SaveImage(obj, "Metalness")
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
+            
+    if options.use_albedo == True:
+        print("Baking Albedo on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        if SetToEmissive(obj):
+            ConfigureMaterials(obj, "Albedo")
+            bpy.ops.object.bake(type="EMIT")
+        
+            SaveImage(obj, "Albedo")
+        else:
+            ConfigureMaterials(obj, "Albedo")
+            bpy.ops.object.bake(type="DIFFUSE")
+        
+            SaveImage(obj, "Albedo")
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
+            
+    
+    try:
+        ReconfigureMaterials(obj)
+    except:
+        print("Failed to reconfigure materials on", obj.name)
+        
 def ReconfigureMaterials(obj):
     for mat in obj.material_slots:
         output = mat.material.node_tree.nodes["Material Output"]        
@@ -348,6 +372,11 @@ class ExportPanel(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(options.all_export_settings, "use_emit")
+        
+        row = layout.row(align=True)
+        row.enabled = not options.all_export_settings.bake_materials
+        if (options.all_export_settings.bake_materials):
+            options.all_export_settings.use_combined = False
         row.prop(options.all_export_settings, "use_combined")
 
         row = layout.row()
@@ -360,6 +389,9 @@ class ExportPanel(bpy.types.Panel):
         
         row = layout.row()
         row.prop(options.all_export_settings, "seperate_objects")
+        
+        row = layout.row()
+        row.prop(options.all_export_settings, "bake_materials")
         
         row = layout.row()
         row.label(text= "Export Selected Object")
@@ -380,6 +412,7 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
 
     seperate_objects: bpy.props.BoolProperty(name="Separate Objects", default=False)
+    bake_materials: bpy.props.BoolProperty(name="Only Bake Materials", default=False)
     
     texture_resoulution: bpy.props.EnumProperty(
         name = "Resoulution",
