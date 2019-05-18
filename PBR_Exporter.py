@@ -74,17 +74,17 @@ class BakeObjects(bpy.types.Operator):
                  object.name = material.name
                  try:
                     object.material_slots[0].material = material
-                    BakeObjectMaterials(object, options, data)
+                    data = BakeObjectMaterials(object, options, data)
                  except:
                     object.data.materials.append(material)
                     object.material_slots[0].material = material
-                    BakeObjectMaterials(object, options, data)
+                    data = BakeObjectMaterials(object, options, data)
         if (options.bake_materials == False):    
             for obj in selection:
                 
                 if obj.type == "MESH":
                         
-                    BakeObjectMaterials(obj, options, data)
+                    data = BakeObjectMaterials(obj, options, data)
                     
         print("Baking Done                                                                                       ")
                 
@@ -214,6 +214,8 @@ def BakeObjectMaterials(obj, options, data):
     except:
         print("Failed to reconfigure materials on", obj.name)
         
+    data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
+    return data
 def ReconfigureMaterials(obj):
     for mat in obj.material_slots:
         output = mat.material.node_tree.nodes["Material Output"]        
