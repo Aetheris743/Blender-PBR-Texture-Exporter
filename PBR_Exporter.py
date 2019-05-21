@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 1, 0),
+    "version" : (1, 1, 2),
     "description" :
             "Export Blender Objects and Textures",
 }
@@ -215,20 +215,20 @@ def BakeObjectMaterials(obj, options, data):
     if options.use_ao == True:
         print("Baking AO on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
-        if SetToEmissive(obj):
-            ConfigureMaterials(obj, "AO")
-            for mat in obj.material_slots:
-                ao = mat.material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
-                emission = mat.material.node_tree.nodes.new("ShaderNodeEmission")
-                output = mat.material.node_tree.nodes["Material Output"]
-                
-                links = mat.material.node_tree.links
-                links.new(output.inputs[0], emission.outputs[0])
-                links.new(emission.inputs[0], ao.outputs[0])
+        ConfigureMaterials(obj, "AO")
+        for mat in obj.material_slots:
+            ao = mat.material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
+            emission = mat.material.node_tree.nodes.new("ShaderNodeEmission")
+            output = mat.material.node_tree.nodes["Material Output"]
+            
+            links = mat.material.node_tree.links
+            links.new(output.inputs[0], emission.outputs[0])
+            links.new(emission.inputs[0], ao.outputs[0])
                     
-            bpy.ops.object.bake(type="EMIT")
+        bpy.ops.object.bake(type="EMIT")
                     
-            SaveImage(obj, "AO")
+        SaveImage(obj, "AO")
+        
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
@@ -319,36 +319,40 @@ def SetupMaterialExport(obj):
         
         nodetree.links.new(output, principled.outputs[0])
         
-        if options.use_albedo == True:
-            diffuse = nodetree.nodes.new("ShaderNodeTexImage")
-            diffuse.image = bpy.data.images[obj.name+"_Albedo"]
-            
-            nodetree.links.new(principled.inputs["Base Color"], diffuse.outputs[0])
+        try:
+            if options.use_albedo == True:
+                diffuse = nodetree.nodes.new("ShaderNodeTexImage")
+                diffuse.image = bpy.data.images[obj.name+"_Albedo"]
                 
-        if options.use_normal == True:
-            normal = nodetree.nodes.new("ShaderNodeTexImage")
-            normal.image = bpy.data.images[obj.name+"_Normal"]
-            normal.color_space = "NONE"
-            
-            map = nodetree.nodes.new("ShaderNodeNormalMap")
-            
-            nodetree.links.new(map.inputs["Color"], normal.outputs[0])            
-            
-            nodetree.links.new(principled.inputs["Normal"], map.outputs[0])
+                nodetree.links.new(principled.inputs["Base Color"], diffuse.outputs[0])
                     
-        if options.use_metal == True:
-            gloss = nodetree.nodes.new("ShaderNodeTexImage")
-            gloss.image = bpy.data.images[obj.name+"_Metalness"]
-            gloss.color_space = "NONE" 
-            
-            nodetree.links.new(principled.inputs["Metallic"], gloss.outputs[0])
-                    
-        if options.use_rough == True:
-            rough = nodetree.nodes.new("ShaderNodeTexImage")
-            rough.image = bpy.data.images[obj.name+"_Roughness"]
-            rough.color_space = "NONE"
-            
-            nodetree.links.new(principled.inputs["Roughness"], rough.outputs[0])
+            if options.use_normal == True:
+                normal = nodetree.nodes.new("ShaderNodeTexImage")
+                normal.image = bpy.data.images[obj.name+"_Normal"]
+                normal.colorspace_settings.name = 'Non-Color'
+                
+                map = nodetree.nodes.new("ShaderNodeNormalMap")
+                
+                nodetree.links.new(map.inputs["Color"], normal.outputs[0])            
+                
+                nodetree.links.new(principled.inputs["Normal"], map.outputs[0])
+                        
+            if options.use_metal == True:
+                gloss = nodetree.nodes.new("ShaderNodeTexImage")
+                gloss.image = bpy.data.images[obj.name+"_Metalness"]
+                gloss.colorspace_settings.name = 'Non-Color'
+                
+                nodetree.links.new(principled.inputs["Metallic"], gloss.outputs[0])
+                        
+            if options.use_rough == True:
+                rough = nodetree.nodes.new("ShaderNodeTexImage")
+                rough.image = bpy.data.images[obj.name+"_Roughness"]
+                rough.colorspace_settings.name = 'Non-Color'
+                
+                nodetree.links.new(principled.inputs["Roughness"], rough.outputs[0])
+                
+        except:
+            print("Failed to convert colorspace")
 
 
 def ConfigureMaterials(obj, texture_type):
