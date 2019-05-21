@@ -53,6 +53,10 @@ class BakeObjects(bpy.types.Operator):
             texture_number += 1
         if options.use_albedo == True:
             texture_number += 1
+        if options.use_ao == True:
+            texture_number += 1
+        if texture_number == 0:
+            return
         
         bake_number = texture_number*objnumber
         texture_percent = bar_size / bake_number
@@ -74,17 +78,17 @@ class BakeObjects(bpy.types.Operator):
                  object.name = material.name
                  try:
                     object.material_slots[0].material = material
-                    BakeObjectMaterials(object, options, data)
+                    data = BakeObjectMaterials(object, options, data)
                  except:
                     object.data.materials.append(material)
                     object.material_slots[0].material = material
-                    BakeObjectMaterials(object, options, data)
+                    data = BakeObjectMaterials(object, options, data)
         if (options.bake_materials == False):    
             for obj in selection:
                 
                 if obj.type == "MESH":
                         
-                    BakeObjectMaterials(obj, options, data)
+                    data = BakeObjectMaterials(obj, options, data)
                     
         print("Baking Done                                                                                       ")
                 
@@ -207,6 +211,27 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
+        
+    if options.use_ao == True:
+        print("Baking AO on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        if SetToEmissive(obj):
+            ConfigureMaterials(obj, "AO")
+            for mat in obj.material_slots:
+                ao = mat.material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
+                emission = mat.material.node_tree.nodes.new("ShaderNodeEmission")
+                output = mat.material.node_tree.nodes["Material Output"]
+                
+                links = mat.material.node_tree.links
+                links.new(output.inputs[0], emission.outputs[0])
+                links.new(emission.inputs[0], ao.outputs[0])
+                    
+            bpy.ops.object.bake(type="EMIT")
+                    
+            SaveImage(obj, "AO")
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first
             
     
     try:
@@ -214,13 +239,15 @@ def BakeObjectMaterials(obj, options, data):
     except:
         print("Failed to reconfigure materials on", obj.name)
         
+    data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
+    return data
+    
 def ReconfigureMaterials(obj):
     for mat in obj.material_slots:
         output = mat.material.node_tree.nodes["Material Output"]        
         principled = mat.material.node_tree.nodes["Principled BSDF"]
         
         mat.material.node_tree.links.new(output.inputs[0], principled.outputs[0])
-
 
 def SetToEmissive(obj, principled_input="Base Color"):   
     try: 
@@ -372,6 +399,7 @@ class ExportPanel(bpy.types.Panel):
 
         row = layout.row(align=True)
         row.prop(options.all_export_settings, "use_emit")
+        row.prop(options.all_export_settings, "use_ao")
         
         row = layout.row(align=True)
         row.enabled = not options.all_export_settings.bake_materials
@@ -409,6 +437,7 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_metal: bpy.props.BoolProperty(name="Metalness", default=True)    
     use_rough: bpy.props.BoolProperty(name="Roughness", default=True)    
     use_emit: bpy.props.BoolProperty(name="Emission", default=True)    
+    use_ao: bpy.props.BoolProperty(name="AO", default=True)    
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
 
     seperate_objects: bpy.props.BoolProperty(name="Separate Objects", default=False)
