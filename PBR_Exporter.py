@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 1, 2),
+    "version" : (1, 1, 3),
     "description" :
             "Export Blender Objects and Textures",
 }
