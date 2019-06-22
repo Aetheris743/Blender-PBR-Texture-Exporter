@@ -98,7 +98,7 @@ class BakeObjects(bpy.types.Operator):
                   
                 bpy.ops.object.select_all(action='DESELECT')
                 obj.select_set(True)
-                if (options.bake_materials == False):
+                if (options.bake_materials == False and texture_number != 0):
                     SetupMaterialExport(obj)
                     
                 if options.seperate_objects == True:
@@ -110,7 +110,10 @@ class BakeObjects(bpy.types.Operator):
                     
                     except:    
                         
-                        os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])   
+                        try:
+                            os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])   
+                        except:
+                            pass
                         
                         try:            
                             path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
@@ -461,12 +464,12 @@ class ExportPanel(bpy.types.Panel):
 
 
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
-    use_albedo: bpy.props.BoolProperty(name="Albedo", default=True)    
-    use_normal: bpy.props.BoolProperty(name="Normal", default=True)    
-    use_metal: bpy.props.BoolProperty(name="Metalness", default=True)    
-    use_rough: bpy.props.BoolProperty(name="Roughness", default=True)    
-    use_emit: bpy.props.BoolProperty(name="Emission", default=True)    
-    use_ao: bpy.props.BoolProperty(name="AO", default=True)    
+    use_albedo: bpy.props.BoolProperty(name="Albedo", default=False)    
+    use_normal: bpy.props.BoolProperty(name="Normal", default=False)    
+    use_metal: bpy.props.BoolProperty(name="Metalness", default=False)    
+    use_rough: bpy.props.BoolProperty(name="Roughness", default=False)    
+    use_emit: bpy.props.BoolProperty(name="Emission", default=False)    
+    use_ao: bpy.props.BoolProperty(name="AO", default=False)    
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
 
     seperate_objects: bpy.props.BoolProperty(name="Separate Objects", default=False)
