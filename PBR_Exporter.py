@@ -3,9 +3,9 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 1, 4),
+    "version" : (1, 2, 0),
     "description" :
-            "Export Blender Objects and Textures",
+            "Export Blender Meshes and Textures",
 }
 
 
@@ -66,12 +66,20 @@ class BakeObjects(bpy.types.Operator):
             bake_progress = 0
             
             data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
-
-            print("Starting Texture Baking:")    
             
+            if (options.generate_uvs == True):
+                for obj in selection:
+                    bpy.ops.object.select_all(action='DESELECT')
+                    obj.select_set(True)
+                    bpy.ops.object.editmode_toggle()
+                    bpy.ops.mesh.select_all(action='SELECT')
+                    bpy.ops.uv.smart_project()
+                    bpy.ops.object.editmode_toggle() 
+            
+            print("Starting Texture Baking:")    
             if (options.bake_materials == True):  
                 
-                 bpy.ops.mesh.primitive_plane_add(size=2)
+                 #bpy.ops.mesh.primitive_plane_add(size=2)
                  bpy.context.active_object.name = "MATERIAL_BAKE_TARGET"
                  object = bpy.context.active_object
                  for material in bpy.data.materials:
@@ -148,8 +156,10 @@ class BakeObjects(bpy.types.Operator):
 def BakeObjectMaterials(obj, options, data):
     bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress = data
     bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)            
-         
+    obj.select_set(True)   
+    origonal_sample_count = bpy.context.scene.cycles.samples     
+    bpy.context.scene.cycles.samples = 1
+
     if options.use_normal == True:
         print("Baking Normal on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
@@ -187,7 +197,8 @@ def BakeObjectMaterials(obj, options, data):
         bake_progress += texture_percent
         one_percent += first
         
-            
+                 
+    bpy.context.scene.cycles.samples = origonal_sample_count
     if options.use_combined == True:
         bpy.context.scene.render.bake.use_pass_direct = True
         bpy.context.scene.render.bake.use_pass_indirect = True
@@ -205,7 +216,8 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
-    
+         
+    bpy.context.scene.cycles.samples = 1
     if options.use_metal == True:
         print("Baking Metalic on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
@@ -239,7 +251,8 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
-        
+             
+    bpy.context.scene.cycles.samples = 12
     if options.use_ao == True:
         print("Baking AO on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
@@ -259,7 +272,8 @@ def BakeObjectMaterials(obj, options, data):
         
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
-        one_percent += first
+        one_percent += first     
+    bpy.context.scene.cycles.samples = origonal_sample_count
             
     
     try:
@@ -438,7 +452,7 @@ class ExportPanel(bpy.types.Panel):
         if (options.all_export_settings.bake_materials):
             options.all_export_settings.use_combined = False
         row.prop(options.all_export_settings, "use_combined")
-
+                
         row = layout.row()
         row.label(text= "Select the Texture Resoulution")
 
@@ -451,16 +465,19 @@ class ExportPanel(bpy.types.Panel):
         row.prop(options.all_export_settings, "seperate_objects")
         
         row = layout.row()
-        row.prop(options.all_export_settings, "bake_materials")
+        row.prop(options.all_export_settings, "bake_materials")        
         
         row = layout.row()
-        row.label(text= "Export Selected Object")
+        row.prop(options.all_export_settings, "generate_uvs")
+        
+        row = layout.row()
+        row.label(text= "Export Selected Objects and Textures")
         
         row = layout.row()
         row.prop(bpy.context.scene.render, "filepath")
 
         row = layout.row()
-        row.operator("bake.bakeobjects", text='Export Objects')
+        row.operator("bake.bakeobjects", text='Export')
 
 
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
@@ -471,6 +488,8 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_emit: bpy.props.BoolProperty(name="Emission", default=False)    
     use_ao: bpy.props.BoolProperty(name="AO", default=False)    
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
+    
+    generate_uvs: bpy.props.BoolProperty(name="Generate UV Maps", default=False)
 
     seperate_objects: bpy.props.BoolProperty(name="Separate Objects", default=False)
     bake_materials: bpy.props.BoolProperty(name="Only Bake Materials", default=False)
