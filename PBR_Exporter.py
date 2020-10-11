@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 80, 0),
     "author" : "Aetheris",
-    "version" : (1, 2, 0),
+    "version" : (1, 3, 0),
     "description" :
             "Export Blender Meshes and Textures",
 }
@@ -156,9 +156,7 @@ class BakeObjects(bpy.types.Operator):
 def BakeObjectMaterials(obj, options, data):
     bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress = data
     bpy.ops.object.select_all(action='DESELECT')
-    obj.select_set(True)   
-    origonal_sample_count = bpy.context.scene.cycles.samples     
-    bpy.context.scene.cycles.samples = 1
+    obj.select_set(True)
 
     if options.use_normal == True:
         print("Baking Normal on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
@@ -196,9 +194,6 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
-        
-                 
-    bpy.context.scene.cycles.samples = origonal_sample_count
     if options.use_combined == True:
         bpy.context.scene.render.bake.use_pass_direct = True
         bpy.context.scene.render.bake.use_pass_indirect = True
@@ -216,8 +211,6 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
-         
-    bpy.context.scene.cycles.samples = 1
     if options.use_metal == True:
         print("Baking Metalic on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
@@ -251,8 +244,6 @@ def BakeObjectMaterials(obj, options, data):
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
         one_percent += first
-             
-    bpy.context.scene.cycles.samples = 12
     if options.use_ao == True:
         print("Baking AO on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
@@ -272,10 +263,28 @@ def BakeObjectMaterials(obj, options, data):
         
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
-        one_percent += first     
-    bpy.context.scene.cycles.samples = origonal_sample_count
+        one_percent += first 
             
-    
+    if options.use_curvature == True:
+        print("Baking Curvature on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
+        sys.stdout = open(os.devnull, "w")
+        ConfigureMaterials(obj, "Curvature")
+        for mat in obj.material_slots:
+            ao = mat.material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
+            emission = mat.material.node_tree.nodes.new("ShaderNodeEmission")
+            output = mat.material.node_tree.nodes["Material Output"]
+            
+            links = mat.material.node_tree.links
+            links.new(output.inputs[0], emission.outputs[0])
+            links.new(emission.inputs[0], ao.outputs[0])
+                    
+        bpy.ops.object.bake(type="EMIT")
+                    
+        SaveImage(obj, "AO")
+        
+        sys.stdout = sys.__stdout__
+        bake_progress += texture_percent
+        one_percent += first 
     try:
         ReconfigureMaterials(obj)
     except:
@@ -433,7 +442,7 @@ class ExportPanel(bpy.types.Panel):
         options = context.window_manager
 
         row = layout.row()
-        row.label(text= "Select Textures to Export")
+        row.label(text= "Textures to Export")
 
         row = layout.row(align=True)
         row.prop(options.all_export_settings, "use_albedo")
@@ -451,11 +460,22 @@ class ExportPanel(bpy.types.Panel):
         row.enabled = not options.all_export_settings.bake_materials
         if (options.all_export_settings.bake_materials):
             options.all_export_settings.use_combined = False
+            options.all_export_settings.use_curvature = False
+            options.all_export_settings.use_colorid = False
         row.prop(options.all_export_settings, "use_combined")
+        row.prop(options.all_export_settings, "use_curvature")
+        
+        row = layout.row()
+        row.enabled = not options.all_export_settings.bake_materials
+        row.prop(options.all_export_settings, "use_colorid")
+        
+        if options.all_export_settings.use_colorid:
+            row = layout.row()
+            row.label(text="Export .FBX with combined materials")
+            row.prop(options.all_export_settings, "combine_materials")
                 
         row = layout.row()
-        row.label(text= "Select the Texture Resoulution")
-
+        row.label(text= "Map Texture Resoulution")
         row = layout.row()
         row.prop(options.all_export_settings, "texture_resoulution", expand=True)
         
@@ -471,13 +491,12 @@ class ExportPanel(bpy.types.Panel):
         row.prop(options.all_export_settings, "generate_uvs")
         
         row = layout.row()
-        row.label(text= "Export Selected Objects and Textures")
         
         row = layout.row()
         row.prop(bpy.context.scene.render, "filepath")
 
         row = layout.row()
-        row.operator("bake.bakeobjects", text='Export')
+        row.operator("bake.bakeobjects", text='Export Maps')
 
 
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
@@ -486,8 +505,13 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_metal: bpy.props.BoolProperty(name="Metalness", default=False)    
     use_rough: bpy.props.BoolProperty(name="Roughness", default=False)    
     use_emit: bpy.props.BoolProperty(name="Emission", default=False)    
-    use_ao: bpy.props.BoolProperty(name="AO", default=False)    
+    use_ao: bpy.props.BoolProperty(name="AO", default=False)
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
+    use_curvature: bpy.props.BoolProperty(name="Curvature", default=False)
+    
+    use_colorid: bpy.props.BoolProperty(name="Material ID", default=False)
+        
+    combine_materials: bpy.props.BoolProperty(name="", default=False)
     
     generate_uvs: bpy.props.BoolProperty(name="Generate UV Maps", default=False)
 
