@@ -1,7 +1,7 @@
 bl_info = {
     "name": "PBR Exporter",
     "category": "Export",
-    "blender": (2, 80, 0),
+    "blender": (2, 90, 0),
     "author" : "Aetheris",
     "version" : (1, 3, 0),
     "description" :
@@ -15,6 +15,7 @@ import bpy
 import os
 import shutil
 import sys
+import random
 
 class BakeObjects(bpy.types.Operator):
     """Bake and export selected scene objects"""
@@ -54,6 +55,8 @@ class BakeObjects(bpy.types.Operator):
         if options.use_albedo == True:
             texture_number += 1
         if options.use_ao == True:
+            texture_number += 1
+        if options.use_curvature == True:
             texture_number += 1
             
         if texture_number > 0:     
@@ -135,7 +138,36 @@ class BakeObjects(bpy.types.Operator):
                             bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
                             
                 
+        if options.use_material_id == True:
+            colors = []
+            for material in bpy.data.materials:
+                if material.node_tree != None:
+                    color_node = material.node_tree.nodes.new("ShaderNodeEmission")
+                    color = (random.randint(0,255)/255, random.randint(0,255)/255, random.randint(0,255)/255, 1)
+                    while color in colors:
+                        print("run")
+                        color = (random.randint(0,255)/255, random.randint(0,255)/255, random.randint(0,255)/255, 1)
+                    colors.append(color)
+                    color_node.inputs[0].default_value = color
+                    output = material.node_tree.nodes["Material Output"]
+                    
+                    links = material.node_tree.links
+                    links.new(output.inputs[0], color_node.outputs[0]) 
             
+            for obj in selection:
+                print("Baking Material ID on", obj.name)
+                ConfigureMaterials(obj, "ID")
+                sys.stdout = open(os.devnull, "w")
+                bpy.ops.object.bake(type="EMIT")
+            
+                SaveImage(obj, "ID")
+                sys.stdout = sys.__stdout__
+                
+                try:
+                    ReconfigureMaterials(obj)
+                except:
+                    print("Failed to reconfigure materials on", obj.name)
+                
         if options.seperate_objects == False:
             path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0]+ "\\" + bpy.data.filepath.split("\\")[-1].split(".")[0]
             print(path)
@@ -266,25 +298,34 @@ def BakeObjectMaterials(obj, options, data):
         one_percent += first 
             
     if options.use_curvature == True:
+        print("run")
         print("Baking Curvature on", obj.name, "", "#"*int(bake_progress), "-"*int(bar_size-bake_progress), str(one_percent)+"% Done", "               ", end="\r")
         sys.stdout = open(os.devnull, "w")
         ConfigureMaterials(obj, "Curvature")
         for mat in obj.material_slots:
-            ao = mat.material.node_tree.nodes.new("ShaderNodeAmbientOcclusion")
+            geometry = mat.material.node_tree.nodes.new("ShaderNodeNewGeometry")
+            
+            color_ramp = mat.material.node_tree.nodes.new("ShaderNodeValToRGB")
+            color_ramp.color_ramp.elements[0].position = (0.471)
+            color_ramp.color_ramp.elements[0].color = (0,0,0,1)
+            color_ramp.color_ramp.elements[1].position = (0.514) 
+            color_ramp.color_ramp.elements[1].color = (1,1,1,1)
+                    
             emission = mat.material.node_tree.nodes.new("ShaderNodeEmission")
             output = mat.material.node_tree.nodes["Material Output"]
             
             links = mat.material.node_tree.links
             links.new(output.inputs[0], emission.outputs[0])
-            links.new(emission.inputs[0], ao.outputs[0])
+            links.new(color_ramp.inputs[0], geometry.outputs[7])
+            links.new(emission.inputs[0], color_ramp.outputs[0])
                     
         bpy.ops.object.bake(type="EMIT")
                     
-        SaveImage(obj, "AO")
+        SaveImage(obj, "Curvature")
         
         sys.stdout = sys.__stdout__
         bake_progress += texture_percent
-        one_percent += first 
+        one_percent += first
     try:
         ReconfigureMaterials(obj)
     except:
@@ -359,7 +400,6 @@ def SetupMaterialExport(obj):
         material = bpy.data.materials[obj.name+"_"+mat.material.name]
         material.use_nodes = True
         
-        print(material)
         mat.material = material
         
         nodetree = material.node_tree
@@ -380,7 +420,7 @@ def SetupMaterialExport(obj):
             if options.use_normal == True:
                 normal = nodetree.nodes.new("ShaderNodeTexImage")
                 normal.image = bpy.data.images[obj.name+"_Normal"]
-                normal.colorspace_settings.name = 'Non-Color'
+                normal.image.colorspace_settings.name = 'Non-Color'
                 
                 map = nodetree.nodes.new("ShaderNodeNormalMap")
                 
@@ -391,19 +431,19 @@ def SetupMaterialExport(obj):
             if options.use_metal == True:
                 gloss = nodetree.nodes.new("ShaderNodeTexImage")
                 gloss.image = bpy.data.images[obj.name+"_Metalness"]
-                gloss.colorspace_settings.name = 'Non-Color'
+                gloss.image.colorspace_settings.name = 'Non-Color'
                 
                 nodetree.links.new(principled.inputs["Metallic"], gloss.outputs[0])
                         
             if options.use_rough == True:
                 rough = nodetree.nodes.new("ShaderNodeTexImage")
                 rough.image = bpy.data.images[obj.name+"_Roughness"]
-                rough.colorspace_settings.name = 'Non-Color'
+                rough.image.colorspace_settings.name = 'Non-Color'
                 
                 nodetree.links.new(principled.inputs["Roughness"], rough.outputs[0])
                 
         except:
-            print("Failed to convert colorspace")
+            print("Failed to convert colorspaces")
 
 
 def ConfigureMaterials(obj, texture_type):
@@ -467,12 +507,12 @@ class ExportPanel(bpy.types.Panel):
         
         row = layout.row()
         row.enabled = not options.all_export_settings.bake_materials
-        row.prop(options.all_export_settings, "use_colorid")
+        row.prop(options.all_export_settings, "use_material_id")
         
-        if options.all_export_settings.use_colorid:
-            row = layout.row()
-            row.label(text="Export .FBX with combined materials")
-            row.prop(options.all_export_settings, "combine_materials")
+        #if options.all_export_settings.use_colorid:  //to be added in later version
+        #    row = layout.row()
+        #    row.label(text="Export .FBX with combined materials")
+        #    row.prop(options.all_export_settings, "combine_materials")
                 
         row = layout.row()
         row.label(text= "Map Texture Resoulution")
@@ -484,8 +524,8 @@ class ExportPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(options.all_export_settings, "seperate_objects")
         
-        row = layout.row()
-        row.prop(options.all_export_settings, "bake_materials")        
+        #row = layout.row() //to be added later
+        #row.prop(options.all_export_settings, "bake_materials")        
         
         row = layout.row()
         row.prop(options.all_export_settings, "generate_uvs")
@@ -509,7 +549,7 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_combined: bpy.props.BoolProperty(name="Combined", default=False)
     use_curvature: bpy.props.BoolProperty(name="Curvature", default=False)
     
-    use_colorid: bpy.props.BoolProperty(name="Material ID", default=False)
+    use_material_id: bpy.props.BoolProperty(name="Material ID", default=False)
         
     combine_materials: bpy.props.BoolProperty(name="", default=False)
     
