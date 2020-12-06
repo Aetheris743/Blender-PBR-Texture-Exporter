@@ -5,7 +5,7 @@ bl_info = {
     "author" : "Aetheris",
     "version" : (1, 3, 0),
     "description" :
-            "Export Blender Meshes and Textures",
+            "Bake and Export Textures and Meshes",
 }
 
 
@@ -16,6 +16,8 @@ import os
 import shutil
 import sys
 import random
+import numpy
+
 
 class BakeObjects(bpy.types.Operator):
     """Bake and export selected scene objects"""
@@ -333,7 +335,10 @@ def BakeObjectMaterials(obj, options, data):
         
     data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
     return data
-    
+
+def CombineTextures(r, g, b):
+    pass
+   
 def ReconfigureMaterials(obj):
     for mat in obj.material_slots:
         output = mat.material.node_tree.nodes["Material Output"]        
@@ -467,7 +472,9 @@ def ConfigureMaterials(obj, texture_type):
         node.image = bpy.data.images[obj.name+"_"+texture_type]
         node.select = True
         mat.material.node_tree.nodes.active = node
-        
+
+    
+  
 class ExportPanel(bpy.types.Panel):
     """Export Menu"""
     bl_label = "Export Panel"
@@ -480,34 +487,44 @@ class ExportPanel(bpy.types.Panel):
         layout = self.layout
         
         options = context.window_manager
-
-        row = layout.row()
-        row.label(text= "Textures to Export")
-
-        row = layout.row(align=True)
-        row.prop(options.all_export_settings, "use_albedo")
-        row.prop(options.all_export_settings, "use_normal")
-
-        row = layout.row(align=True)
-        row.prop(options.all_export_settings, "use_metal")
-        row.prop(options.all_export_settings, "use_rough")
-
-        row = layout.row(align=True)
-        row.prop(options.all_export_settings, "use_emit")
-        row.prop(options.all_export_settings, "use_ao")
         
-        row = layout.row(align=True)
-        row.enabled = not options.all_export_settings.bake_materials
-        if (options.all_export_settings.bake_materials):
-            options.all_export_settings.use_combined = False
-            options.all_export_settings.use_curvature = False
-            options.all_export_settings.use_colorid = False
-        row.prop(options.all_export_settings, "use_combined")
-        row.prop(options.all_export_settings, "use_curvature")
+        box = layout.box()
+        row = box.row()
+        row.prop(options.PBR_starting_map, "active",
+            icon="TRIA_DOWN" if options.PBR_starting_map.active else "TRIA_RIGHT",
+            icon_only=True, emboss=False)
+        row.label(text="test")
         
-        row = layout.row()
-        row.enabled = not options.all_export_settings.bake_materials
-        row.prop(options.all_export_settings, "use_material_id")
+        if options.PBR_starting_map.active:
+            
+        
+        #row = layout.row()
+        #row.label(text= "Textures to Export")
+
+        #row = layout.row(align=True)
+        #row.prop(options.all_export_settings, "use_albedo")
+        #row.prop(options.all_export_settings, "use_normal")
+
+        #row = layout.row(align=True)
+        #row.prop(options.all_export_settings, "use_metal")
+        #row.prop(options.all_export_settings, "use_rough")
+
+        #row = layout.row(align=True)
+        #row.prop(options.all_export_settings, "use_emit")
+        #row.prop(options.all_export_settings, "use_ao")
+        
+        #row = layout.row(align=True)
+        #row.enabled = not options.all_export_settings.bake_materials
+        #if (options.all_export_settings.bake_materials):
+        #    options.all_export_settings.use_combined = False
+        #    options.all_export_settings.use_curvature = False
+        #    options.all_export_settings.use_colorid = False
+        #row.prop(options.all_export_settings, "use_combined")
+        #row.prop(options.all_export_settings, "use_curvature")
+        
+        #row = layout.row()
+        #row.enabled = not options.all_export_settings.bake_materials
+        #row.prop(options.all_export_settings, "use_material_id")
         
         #if options.all_export_settings.use_colorid:  //to be added in later version
         #    row = layout.row()
@@ -539,6 +556,58 @@ class ExportPanel(bpy.types.Panel):
         row.operator("bake.bakeobjects", text='Export Maps')
 
 
+class ExportableMap(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(name="Name", default="New Map")
+    active: bpy.props.BoolProperty(name="Active", default=False)
+    red_channel: bpy.props.EnumProperty(
+        name = "red channel texture",
+        description = "Choose Texture",
+        items = [
+            ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
+            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
+            ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
+        ],
+        default = 'use_nothing'
+    ) 
+    green_channel: bpy.props.EnumProperty(
+        name = "red channel texture",
+        description = "Choose Texture",
+        items = [
+            ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
+            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
+            ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
+        ],
+        default = 'use_nothing'
+    ) 
+    blue_channel: bpy.props.EnumProperty(
+        name = "red channel texture",
+        description = "Choose Texture",
+        items = [
+            ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
+            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
+            ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
+        ],
+        default = 'use_nothing'
+    ) 
+    alpha_channel: bpy.props.EnumProperty(
+        name = "red channel texture",
+        description = "Choose Texture",
+        items = [
+            ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
+            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
+            ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
+        ],
+        default = 'use_nothing'
+    ) 
+    
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
     use_albedo: bpy.props.BoolProperty(name="Albedo", default=False)    
     use_normal: bpy.props.BoolProperty(name="Normal", default=False)    
@@ -571,17 +640,21 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     )  
 
 def register():
+    bpy.utils.register_class(BakeObjectsSettings)
+    bpy.utils.register_class(ExportableMap)
+    bpy.types.WindowManager.PBR_starting_map = bpy.props.PointerProperty(type=ExportableMap)  
+    bpy.types.WindowManager.all_export_settings = bpy.props.PointerProperty(type=BakeObjectsSettings)
     bpy.utils.register_class(ExportPanel)    
     bpy.utils.register_class(BakeObjects)
-    bpy.utils.register_class(BakeObjectsSettings)
-        
-    bpy.types.WindowManager.all_export_settings = bpy.props.PointerProperty(type=BakeObjectsSettings)
+      
+    
 
 
 def unregister():
+    bpy.utils.unregister_class(BakeObjectsSettings)
+    bpy.utils.unregister_class(ExportableMap)
     bpy.utils.unregister_class(ExportPanel)
     bpy.utils.unregister_class(BakeObjects)
-    bpy.utils.unregister_class(BakeObjectsSettings)
 
 
 if __name__ == "__main__":
