@@ -183,11 +183,55 @@ class BakeObjects(bpy.types.Operator):
                 
                 bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
         if bpy.context.window_manager.all_export_settings.number_of_maps > 0:
-            CombineTextures(selection[0], "AO", "null", "Metalness", "null", "Mask")
-            
+            for obj in selection:
+                if bpy.context.window_manager.compound_map_0.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_0)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_0.name)
+                if bpy.context.window_manager.compound_map_1.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_1)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_1.name)
+                if bpy.context.window_manager.compound_map_2.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_2)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_2.name)
+                if bpy.context.window_manager.compound_map_3.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_3)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_3.name)
+                if bpy.context.window_manager.compound_map_4.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_4)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_4.name)
+                if bpy.context.window_manager.compound_map_5.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_5)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_5.name)
+                if bpy.context.window_manager.compound_map_6.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_6)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_6.name)
+                if bpy.context.window_manager.compound_map_7.active == True:
+                    maps = GetMaps(bpy.context.window_manager.compound_map_7)
+                    CombineTextures(obj, maps[0], maps[1], maps[2], maps[3], bpy.context.window_manager.compound_map_7.name)
+                
         bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
                 
         return {'FINISHED'} 
+def GetMaps(ref):
+    maps = []
+    maps += GetTextures(ref.red_channel)
+    maps += GetTextures(ref.green_channel)
+    maps += GetTextures(ref.blue_channel)
+    maps += GetTextures(ref.alpha_channel)
+    return maps
+def GetTextures(channel):
+    maps = []
+    if channel == "use_nothing":
+        maps.append("null")
+    elif channel == "use_rough":
+        maps.append("Roughness")
+    elif channel == "use_metal":
+        maps.append("Metalness")
+    elif channel == "use_curvature":
+        maps.append("Curvature")
+    elif channel == "use_ao":
+        maps.append("AO")
+    return maps
     
 def CombineTextures(obj, tex1, tex2, tex3, tex4, name):
     bpy.context.scene.use_nodes = True
@@ -236,7 +280,14 @@ def CombineTextures(obj, tex1, tex2, tex3, tex4, name):
     
     tmp_path = bpy.context.scene.render.filepath
     
-    bpy.context.scene.render.filepath += obj.name+"_"+name    
+    bpy.context.scene.render.resolution_x = int(bpy.context.window_manager.all_export_settings.texture_resoulution)
+    bpy.context.scene.render.resolution_y = int(bpy.context.window_manager.all_export_settings.texture_resoulution)
+    bpy.context.scene.render.resolution_percentage = 100
+    
+    bpy.context.scene.render.filepath += bpy.data.filepath.split("\\")[-1].split(".")[0]    
+    if bpy.context.window_manager.all_export_settings.seperate_objects == True:
+        bpy.context.scene.render.filepath += "\\"+obj.name
+    bpy.context.scene.render.filepath += "\\"+obj.name+"_"+name
     bpy.ops.render.render(write_still=True)
     bpy.context.scene.render.filepath = tmp_path
     
