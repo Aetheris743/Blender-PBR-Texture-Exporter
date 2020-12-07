@@ -182,11 +182,64 @@ class BakeObjects(bpy.types.Operator):
                 os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])
                 
                 bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+        if bpy.context.window_manager.all_export_settings.number_of_maps > 0:
+            CombineTextures(selection[0], "AO", "null", "Metalness", "null", "Mask")
             
         bpy.ops.wm.open_mainfile(filepath=bpy.data.filepath)
                 
         return {'FINISHED'} 
-
+    
+def CombineTextures(obj, tex1, tex2, tex3, tex4, name):
+    bpy.context.scene.use_nodes = True
+    
+    tree = bpy.context.scene.node_tree
+    for node in tree.nodes:
+        tree.nodes.remove(node)
+    
+    combiner = tree.nodes.new("CompositorNodeCombRGBA") 
+    
+    try:  
+        first_image = tree.nodes.new("CompositorNodeImage")
+        first_image.image = bpy.data.images[obj.name+"_"+tex1]
+    except:
+        first_image = tree.nodes.new("CompositorNodeValue")
+        first_image.outputs[0].default_value = 0
+        
+    try:  
+        second_image = tree.nodes.new("CompositorNodeImage")
+        second_image.image = bpy.data.images[obj.name+"_"+tex2]
+    except:
+        second_image = tree.nodes.new("CompositorNodeValue")
+        second_image.outputs[0].default_value = 0
+        
+    try:  
+        third_image = tree.nodes.new("CompositorNodeImage")
+        third_image.image = bpy.data.images[obj.name+"_"+tex3]
+    except:
+        third_image = tree.nodes.new("CompositorNodeValue")
+        third_image.outputs[0].default_value = 0
+        
+    try:  
+        fourth_image = tree.nodes.new("CompositorNodeImage")
+        fourth_image.image = bpy.data.images[obj.name+"_"+tex4]
+    except:
+        fourth_image = tree.nodes.new("CompositorNodeValue")
+        fourth_image.outputs[0].default_value = 1
+       
+    final = tree.nodes.new("CompositorNodeComposite")   
+        
+    tree.links.new(combiner.outputs[0], final.inputs[0])
+    tree.links.new(first_image.outputs[0], combiner.inputs[0])
+    tree.links.new(second_image.outputs[0], combiner.inputs[1])
+    tree.links.new(third_image.outputs[0], combiner.inputs[2])
+    tree.links.new(fourth_image.outputs[0], combiner.inputs[3])
+    
+    tmp_path = bpy.context.scene.render.filepath
+    
+    bpy.context.scene.render.filepath += obj.name+"_"+name    
+    bpy.ops.render.render(write_still=True)
+    bpy.context.scene.render.filepath = tmp_path
+    
 def BakeObjectMaterials(obj, options, data):
     bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress = data
     bpy.ops.object.select_all(action='DESELECT')
@@ -335,9 +388,6 @@ def BakeObjectMaterials(obj, options, data):
         
     data = (bar_size, view_layer, obj_active, selection, options, objnumber, texture_number, bake_number, texture_percent, one_percent, first, one_percent, bake_progress)
     return data
-
-def CombineTextures(r, g, b):
-    pass
    
 def ReconfigureMaterials(obj):
     for mat in obj.material_slots:
@@ -486,11 +536,9 @@ class ExportPanel(bpy.types.Panel):
     def draw_map_panel(self, layout, mask_ref):
         box = layout.box()
         row = box.row()
-        row.prop(mask_ref, "active",
-            icon="TRIA_DOWN" if mask_ref.active else "TRIA_RIGHT",
-            icon_only=True, emboss=False)
+        row.prop(mask_ref, "active", icon="TRIA_DOWN" if mask_ref.active else "TRIA_RIGHT", icon_only=True, emboss=False)
         row.label(text=mask_ref.name)
-        
+        maps = []
         if mask_ref.active:
             row = box.row()
             row.prop(mask_ref, "name")
@@ -499,12 +547,21 @@ class ExportPanel(bpy.types.Panel):
             
             row = box.row()
             row.prop(mask_ref, "red_channel")
+            if mask_ref.red_channel != "use_nothing":
+                maps.append(mask_ref.red_channel)
             row = box.row()
             row.prop(mask_ref, "green_channel")
+            if mask_ref.green_channel != "use_nothing":
+                maps.append(mask_ref.green_channel)
             row = box.row()
             row.prop(mask_ref, "blue_channel")
+            if mask_ref.blue_channel != "use_nothing":
+                maps.append(mask_ref.blue_channel)
             row = box.row()
             row.prop(mask_ref, "alpha_channel")
+            if mask_ref.alpha_channel != "use_nothing":
+                maps.append(mask_ref.alpha_channel)
+        return maps
             
     def draw(self, context):
         layout = self.layout
@@ -512,35 +569,34 @@ class ExportPanel(bpy.types.Panel):
         options = context.window_manager
         
         
-        self.draw_map_panel(layout, options.compound_map_0)
         
-        #row = layout.row()
-        #row.label(text= "Textures to Export")
+        row = layout.row()
+        row.label(text= "Textures to Export")
 
-        #row = layout.row(align=True)
-        #row.prop(options.all_export_settings, "use_albedo")
-        #row.prop(options.all_export_settings, "use_normal")
+        row = layout.row(align=True)
+        row.prop(options.all_export_settings, "use_albedo")
+        row.prop(options.all_export_settings, "use_normal")
 
-        #row = layout.row(align=True)
-        #row.prop(options.all_export_settings, "use_metal")
-        #row.prop(options.all_export_settings, "use_rough")
+        row = layout.row(align=True)
+        row.prop(options.all_export_settings, "use_metal")
+        row.prop(options.all_export_settings, "use_rough")
 
-        #row = layout.row(align=True)
-        #row.prop(options.all_export_settings, "use_emit")
-        #row.prop(options.all_export_settings, "use_ao")
+        row = layout.row(align=True)
+        row.prop(options.all_export_settings, "use_emit")
+        row.prop(options.all_export_settings, "use_ao")
         
-        #row = layout.row(align=True)
+        row = layout.row(align=True)
         #row.enabled = not options.all_export_settings.bake_materials
         #if (options.all_export_settings.bake_materials):
         #    options.all_export_settings.use_combined = False
         #    options.all_export_settings.use_curvature = False
         #    options.all_export_settings.use_colorid = False
-        #row.prop(options.all_export_settings, "use_combined")
-        #row.prop(options.all_export_settings, "use_curvature")
+        row.prop(options.all_export_settings, "use_combined")
+        row.prop(options.all_export_settings, "use_curvature")
         
-        #row = layout.row()
-        #row.enabled = not options.all_export_settings.bake_materials
-        #row.prop(options.all_export_settings, "use_material_id")
+        row = layout.row()
+        row.enabled = not options.all_export_settings.bake_materials
+        row.prop(options.all_export_settings, "use_material_id")
         
         #if options.all_export_settings.use_colorid:  //to be added in later version
         #    row = layout.row()
@@ -552,6 +608,36 @@ class ExportPanel(bpy.types.Panel):
         row = layout.row()
         row.prop(options.all_export_settings, "texture_resoulution", expand=True)
         
+        row = layout.row()
+        row.label(text="Composite Maps")
+        maps_used = []
+        if options.all_export_settings.number_of_maps > 0:
+            maps_used += self.draw_map_panel(layout, options.compound_map_0)
+        if options.all_export_settings.number_of_maps > 1:
+            maps_used += self.draw_map_panel(layout, options.compound_map_1)
+        if options.all_export_settings.number_of_maps > 2:
+            maps_used += self.draw_map_panel(layout, options.compound_map_2)
+        if options.all_export_settings.number_of_maps > 3:
+            maps_used += self.draw_map_panel(layout, options.compound_map_3)
+        if options.all_export_settings.number_of_maps > 4:
+            maps_used += self.draw_map_panel(layout, options.compound_map_4)
+        if options.all_export_settings.number_of_maps > 5:
+            maps_used += self.draw_map_panel(layout, options.compound_map_5)
+        if options.all_export_settings.number_of_maps > 6:
+            maps_used += self.draw_map_panel(layout, options.compound_map_6)
+        if options.all_export_settings.number_of_maps > 7:
+            maps_used += self.draw_map_panel(layout, options.compound_map_7)
+        maps_used = list(dict.fromkeys(maps_used))
+        
+        for map in maps_used:
+            exec("options.all_export_settings."+map+" = True")
+        
+        row = layout.row()
+        if options.all_export_settings.number_of_maps < 7:
+            row.operator("bake.add_compound_map", text="Add Composite Map")
+        if options.all_export_settings.number_of_maps > 0:
+            row.operator("bake.remove_compound_map", text="Remove Composite Map")
+
         row = layout.row()
         
         row = layout.row()
@@ -580,8 +666,8 @@ class ExportableMap(bpy.types.PropertyGroup):
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
-            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
-            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_rough", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metal", "Metalness", "Use Metalness for this Texture Channel"),
             ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
             ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
         ],
@@ -592,8 +678,8 @@ class ExportableMap(bpy.types.PropertyGroup):
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
-            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
-            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_rough", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metal", "Metalness", "Use Metalness for this Texture Channel"),
             ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
             ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
         ],
@@ -604,8 +690,8 @@ class ExportableMap(bpy.types.PropertyGroup):
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
-            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
-            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_rough", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metal", "Metalness", "Use Metalness for this Texture Channel"),
             ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
             ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
         ],
@@ -616,8 +702,8 @@ class ExportableMap(bpy.types.PropertyGroup):
         description = "Choose Texture",
         items = [
             ("use_nothing", "Fulll", "Create this Channel at full Values"),
-            ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
-            ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
+            ("use_rough", "Roughness", "Use Roughness for this Texture Channel"),
+            ("use_metal", "Metalness", "Use Metalness for this Texture Channel"),
             ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
             ("use_curvature", "Curvature", "Use Curvature for this Texture Channel"),
         ],
@@ -626,20 +712,20 @@ class ExportableMap(bpy.types.PropertyGroup):
 
 class AddCompoundMap(bpy.types.Operator):
     """Internal"""
-    bl_idname = "bake.add_compund_map"
+    bl_idname = "bake.add_compound_map"
     bl_label = "Add Compund Map"
 
     def execute(self, context):
-        context.window_manager.all_export_setting.number_of_maps += 1
+        context.window_manager.all_export_settings.number_of_maps += 1
         return {'FINISHED'}
     
 class RemoveCompoundMap(bpy.types.Operator):
     """Internal"""
-    bl_idname = "bake.remove_compund_map"
+    bl_idname = "bake.remove_compound_map"
     bl_label = "Remove Compund Map"
 
     def execute(self, context):
-        context.window_manager.all_export_setting.number_of_maps -= 1
+        context.window_manager.all_export_settings.number_of_maps -= 1
         return {'FINISHED'}
   
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
