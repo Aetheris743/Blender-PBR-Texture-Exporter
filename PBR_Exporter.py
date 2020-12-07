@@ -482,21 +482,37 @@ class ExportPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "render"
-
+    
+    def draw_map_panel(self, layout, mask_ref):
+        box = layout.box()
+        row = box.row()
+        row.prop(mask_ref, "active",
+            icon="TRIA_DOWN" if mask_ref.active else "TRIA_RIGHT",
+            icon_only=True, emboss=False)
+        row.label(text=mask_ref.name)
+        
+        if mask_ref.active:
+            row = box.row()
+            row.prop(mask_ref, "name")
+            row = box.row()
+            row.label(text="Channel Maps")
+            
+            row = box.row()
+            row.prop(mask_ref, "red_channel")
+            row = box.row()
+            row.prop(mask_ref, "green_channel")
+            row = box.row()
+            row.prop(mask_ref, "blue_channel")
+            row = box.row()
+            row.prop(mask_ref, "alpha_channel")
+            
     def draw(self, context):
         layout = self.layout
         
         options = context.window_manager
         
-        box = layout.box()
-        row = box.row()
-        row.prop(options.PBR_starting_map, "active",
-            icon="TRIA_DOWN" if options.PBR_starting_map.active else "TRIA_RIGHT",
-            icon_only=True, emboss=False)
-        row.label(text="test")
         
-        if options.PBR_starting_map.active:
-            
+        self.draw_map_panel(layout, options.compound_map_0)
         
         #row = layout.row()
         #row.label(text= "Textures to Export")
@@ -560,7 +576,7 @@ class ExportableMap(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name", default="New Map")
     active: bpy.props.BoolProperty(name="Active", default=False)
     red_channel: bpy.props.EnumProperty(
-        name = "red channel texture",
+        name = "Red",
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
@@ -572,7 +588,7 @@ class ExportableMap(bpy.types.PropertyGroup):
         default = 'use_nothing'
     ) 
     green_channel: bpy.props.EnumProperty(
-        name = "red channel texture",
+        name = "Green",
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
@@ -584,7 +600,7 @@ class ExportableMap(bpy.types.PropertyGroup):
         default = 'use_nothing'
     ) 
     blue_channel: bpy.props.EnumProperty(
-        name = "red channel texture",
+        name = "Blue",
         description = "Choose Texture",
         items = [
             ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
@@ -596,10 +612,10 @@ class ExportableMap(bpy.types.PropertyGroup):
         default = 'use_nothing'
     ) 
     alpha_channel: bpy.props.EnumProperty(
-        name = "red channel texture",
+        name = "Alpha",
         description = "Choose Texture",
         items = [
-            ("use_nothing", "Empty", "Leave this Texture Channel Empty"),
+            ("use_nothing", "Fulll", "Create this Channel at full Values"),
             ("use_roughness", "Roughness", "Use Roughness for this Texture Channel"),
             ("use_metalness", "Metalness", "Use Metalness for this Texture Channel"),
             ("use_ao", "AO", "Use Ambient Occlusion for this Texture Channel"),
@@ -607,7 +623,25 @@ class ExportableMap(bpy.types.PropertyGroup):
         ],
         default = 'use_nothing'
     ) 
+
+class AddCompoundMap(bpy.types.Operator):
+    """Internal"""
+    bl_idname = "bake.add_compund_map"
+    bl_label = "Add Compund Map"
+
+    def execute(self, context):
+        context.window_manager.all_export_setting.number_of_maps += 1
+        return {'FINISHED'}
     
+class RemoveCompoundMap(bpy.types.Operator):
+    """Internal"""
+    bl_idname = "bake.remove_compund_map"
+    bl_label = "Remove Compund Map"
+
+    def execute(self, context):
+        context.window_manager.all_export_setting.number_of_maps -= 1
+        return {'FINISHED'}
+  
 class BakeObjectsSettings(bpy.types.PropertyGroup):    
     use_albedo: bpy.props.BoolProperty(name="Albedo", default=False)    
     use_normal: bpy.props.BoolProperty(name="Normal", default=False)    
@@ -621,6 +655,8 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
     use_material_id: bpy.props.BoolProperty(name="Material ID", default=False)
         
     combine_materials: bpy.props.BoolProperty(name="", default=False)
+    
+    number_of_maps: bpy.props.IntProperty(name="Number of Maps", default=0, min=0, max=7)
     
     generate_uvs: bpy.props.BoolProperty(name="Generate UV Maps", default=False)
 
@@ -642,8 +678,20 @@ class BakeObjectsSettings(bpy.types.PropertyGroup):
 def register():
     bpy.utils.register_class(BakeObjectsSettings)
     bpy.utils.register_class(ExportableMap)
-    bpy.types.WindowManager.PBR_starting_map = bpy.props.PointerProperty(type=ExportableMap)  
+    
+    bpy.types.WindowManager.compound_map_0 = bpy.props.PointerProperty(type=ExportableMap) 
+    bpy.types.WindowManager.compound_map_1 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_2 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_3 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_4 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_5 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_6 = bpy.props.PointerProperty(type=ExportableMap)
+    bpy.types.WindowManager.compound_map_7 = bpy.props.PointerProperty(type=ExportableMap) 
+    
     bpy.types.WindowManager.all_export_settings = bpy.props.PointerProperty(type=BakeObjectsSettings)
+    
+    bpy.utils.register_class(AddCompoundMap)
+    bpy.utils.register_class(RemoveCompoundMap)
     bpy.utils.register_class(ExportPanel)    
     bpy.utils.register_class(BakeObjects)
       
@@ -653,6 +701,8 @@ def register():
 def unregister():
     bpy.utils.unregister_class(BakeObjectsSettings)
     bpy.utils.unregister_class(ExportableMap)
+    bpy.utils.unregister_class(AddCompoundMap)
+    bpy.utils.unregister_class(RemoveCompoundMap)
     bpy.utils.unregister_class(ExportPanel)
     bpy.utils.unregister_class(BakeObjects)
 
