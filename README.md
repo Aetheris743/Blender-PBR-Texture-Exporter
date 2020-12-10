@@ -3,7 +3,7 @@ This plugin is designed to improve the export process from blender to any extern
 ## How to install
 To install this plugin download *PBR_Exporter.py*, install it from the blender's plugin preferences, and enable it.
 ## How to use
-Select the objects to export and the textures to export with them in the export panel. Then select the output directory. (*note: the objects will be exported into a subdirectory of the output path named after the blend file*) Then press *Export Objects*. Blender will momentarily freeze while it is baking textures. (*bake progress is logged to the console.*) Blender will then configure object materials to use the textures and export all of the objects to a .fbx. (*Or into individual .fbx's if 'Seperate Objects' is enabled.*) For fastest baking switch to the fastest rendering type *(CPU vs GPU. Combined is not currently compatible with some GPUs)* and this plugin uses blender's cycles for baking textures so cycles quality setting will affect the baking speeds.
+Select the objects to export and the textures to export with them in the export panel. Then select the output directory. (*note: the objects will be exported into a subdirectory of the output path named after the blend file*) Then press *Export Objects*. Blender will momentarily freeze while it is baking textures. (*bake progress is logged to the console.*) Blender will then configure object materials to use the textures and export all of the objects to a .fbx or into individual .fbx's if 'Seperate Objects' is enabled. For fastest baking switch to GPU rendering. This plugin uses blender's cycles for baking textures so cycles quality setting will affect the baking speeds and quality for some maps (*AO, Combined, etc.*).
 
 
 
@@ -15,8 +15,10 @@ Select the objects to export and the textures to export with them in the export 
 	- *Roughness:* Bake and export roughness maps.
 	- *Emission:* Bake and export emission maps.
 	- *AO:* Bake and export AO maps.
+	- *Curvature:* Bake a curvature map.
+	- *Material ID:* Bake a map with a different color for each material.
 	- *Combined:* Bake and export combined maps. (*Settings can be changed from cycles baking options*)
 - *Texture Resolution:* The size of the texture maps (1024 -> 1024 * 1024).
+- *Composite Maps:* Options to create maps that have Metalic, Roughness, AO, and Concavity channels
 - *Separate Objects:* Exports each of the selected objects to it's own file and subdirectory
 - *Generate UV Maps:* Generates a UV map for each selected object.
-- *Only Bake Materials:* Only bakes and exports materials. *If a material relies on any mesh data this should be disabled.*
