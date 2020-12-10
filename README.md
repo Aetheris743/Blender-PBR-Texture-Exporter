@@ -1,5 +1,5 @@
 # Blender 2.8 Object Exporter
-This plugin is designed to improve the export process from blender to any external software by automaticly baking standard PBR texture maps and other maps that are useful for texturing, configuring object materials and exporting meshes.
+This plugin is designed to improve the export process from blender to any external software by automaticly baking standard PBR texture maps, other maps that are useful for texturing, and exporting meshes.
 ## How to install this plugin
 To install this plugin download *PBR_Exporter.py*, install it from the blender's preferences, and enable it.
 ## How to use this plugin
