@@ -3,7 +3,7 @@ bl_info = {
     "category": "Export",
     "blender": (2, 90, 0),
     "author" : "Aetheris",
-    "version" : (1, 3, 0),
+    "version" : (2, 0, 0),
     "description" :
             "Bake and Export Textures and Meshes",
 }
@@ -642,12 +642,13 @@ class ExportPanel(bpy.types.Panel):
         #    options.all_export_settings.use_combined = False
         #    options.all_export_settings.use_curvature = False
         #    options.all_export_settings.use_colorid = False
-        row.prop(options.all_export_settings, "use_combined")
+        row.prop(options.all_export_settings, "use_material_id")
         row.prop(options.all_export_settings, "use_curvature")
         
         row = layout.row()
+        row = layout.row()
         row.enabled = not options.all_export_settings.bake_materials
-        row.prop(options.all_export_settings, "use_material_id")
+        row.prop(options.all_export_settings, "use_combined")
         
         #if options.all_export_settings.use_colorid:  //to be added in later version
         #    row = layout.row()
