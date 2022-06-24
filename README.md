@@ -8,6 +8,8 @@ To install this plugin download *PBR_Exporter.py*, install it from the *Add-ons*
 First, Select the objects you want to export the textures of.
 
 Select the options you want in the export panel. *(In render properties)*
+
+
 <img width="197" alt="image" src="https://user-images.githubusercontent.com/45411688/175611326-212c3c53-a92c-491d-ad30-9b3ee6bb8d4a.png">
 
 ### Export Options
@@ -23,6 +25,8 @@ Select the options you want in the export panel. *(In render properties)*
 	- *Combined:* Bake and export combined maps. (*Settings can be changed from cycles baking options*)
 - *Texture Resolution:* The size of the texture maps (1024 -> 1024 * 1024).
 - *Composite Maps:* Options to create maps that have Metalic, Roughness, AO, and Concavity channels  Currently each channel can be *Empty* or a *Curvature*, *AO*, *Metalness*, or *Roughness*
+
+
 	<img width="193" alt="image" src="https://user-images.githubusercontent.com/45411688/175611965-2db996d7-9501-4ff7-854d-9be3ce659a4c.png">
 - *Separate Objects:* Exports each of the selected objects to it's own file and subdirectory
 - *Generate UV Maps:* Generates a UV map for each selected object.
