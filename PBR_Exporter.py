@@ -167,7 +167,7 @@ class BakeObjects(bpy.types.Operator):
                     print("Failed to reconfigure materials on", obj.name)
                 
         if options.seperate_objects == False:
-            path = bpy.context.scene.render.filepath + blender_file_name+ "\\" + blender_file_name
+            path = pathlib.Path(bpy.context.scene.render.filepath) / blender_file_name / blender_file_name
             print(path)
             SelectObjects(selection)
             
@@ -280,10 +280,10 @@ def CombineTextures(obj, tex1, tex2, tex3, tex4, name):
     bpy.context.scene.render.resolution_y = int(bpy.context.window_manager.all_export_settings.texture_resoulution)
     bpy.context.scene.render.resolution_percentage = 100
     
-    bpy.context.scene.render.filepath += bpy.data.filepath.split("\\")[-1].split(".")[0]    
+    export_path = pathlib.Path(bpy.context.scene.render.filepath) / pathlib.Path(bpy.data.filepath).stem
     if bpy.context.window_manager.all_export_settings.seperate_objects == True:
-        bpy.context.scene.render.filepath += "\\"+obj.name
-    bpy.context.scene.render.filepath += "\\"+obj.name+"_"+name
+        path /= obj.name
+    bpy.context.scene.render.filepath = path / (obj.name+"_"+name)
     bpy.ops.render.render(write_still=True)
     bpy.context.scene.render.filepath = tmp_path
     
