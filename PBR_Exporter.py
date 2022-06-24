@@ -125,7 +125,7 @@ class BakeObjects(bpy.types.Operator):
                     try:
                         path = pathlib.Path(bpy.context.scene.render.filepath)
                         path = path / blender_file_name / obj.name / obj.name
-                        path.suffix = ".fbx" 
+                        path = path.with_suffix(".fbx" )
                         bpy.ops.export_scene.fbx(filepath=path, use_selection=True)
 
                     except:    
