@@ -124,8 +124,7 @@ class BakeObjects(bpy.types.Operator):
                 if options.seperate_objects == True:
                     try:
                         path = pathlib.Path(bpy.context.scene.render.filepath)
-                        path = path / blender_file_name / obj.name / obj.name
-                        path = path.with_suffix(".fbx" )
+                        path = path / blender_file_name / obj.name / (obj.name + ".fbx")
                         bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True)
 
                     except:    
