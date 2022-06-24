@@ -17,8 +17,6 @@ import random
 import numpy
 import pathlib
 
-## TODO
-## Testing of new path system
 ## TODO LATER
 ## Update to remove try/catch statements and just check first
 ## Add comments to functions
