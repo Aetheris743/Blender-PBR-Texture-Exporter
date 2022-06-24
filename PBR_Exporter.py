@@ -126,7 +126,7 @@ class BakeObjects(bpy.types.Operator):
                         path = pathlib.Path(bpy.context.scene.render.filepath)
                         path = path / blender_file_name / obj.name / obj.name
                         path = path.with_suffix(".fbx" )
-                        bpy.ops.export_scene.fbx(filepath=path, use_selection=True)
+                        bpy.ops.export_scene.fbx(filepath=str(path), use_selection=True)
 
                     except:    
                         path = pathlib.Path(bpy.context.scene.render.filepath) / blender_file_name / obj.name
@@ -136,11 +136,11 @@ class BakeObjects(bpy.types.Operator):
                             pass
                         
                         try:
-                            bpy.ops.export_scene.fbx(filepath=path / (obj.name + ".fbx"), use_selection=True)
+                            bpy.ops.export_scene.fbx(filepath=str(path) / (obj.name + ".fbx"), use_selection=True)
                             
                         except:    
                             os.mkdir(path)
-                            bpy.ops.export_scene.fbx(filepath=path / (obj.name + ".fbx"), use_selection=True)
+                            bpy.ops.export_scene.fbx(filepath=str(path) / (obj.name + ".fbx"), use_selection=True)
                             
                 
         if options.use_material_id == True:
@@ -179,12 +179,12 @@ class BakeObjects(bpy.types.Operator):
             SelectObjects(selection)
             
             try:
-                bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                bpy.ops.export_scene.fbx(filepath=str(path)+".fbx", use_selection=True)
             
             except:
                 os.mkdir(bpy.context.scene.render.filepath + blender_file_name)
                 
-                bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                bpy.ops.export_scene.fbx(filepath=str(path)+".fbx", use_selection=True)
         if bpy.context.window_manager.all_export_settings.number_of_maps > 0:
             for obj in selection:
                 if bpy.context.window_manager.compound_map_0.active == True:
@@ -289,8 +289,8 @@ def CombineTextures(obj, tex1, tex2, tex3, tex4, name):
     
     export_path = pathlib.Path(bpy.context.scene.render.filepath) / pathlib.Path(bpy.data.filepath).stem
     if bpy.context.window_manager.all_export_settings.seperate_objects == True:
-        path /= obj.name
-    bpy.context.scene.render.filepath = path / (obj.name+"_"+name)
+        export_path /= obj.name
+    bpy.context.scene.render.filepath = str(export_path / (obj.name+"_"+name))
     bpy.ops.render.render(write_still=True)
     bpy.context.scene.render.filepath = tmp_path
     
@@ -568,7 +568,7 @@ def ConfigureMaterials(obj, texture_type):
     if bpy.context.window_manager.all_export_settings.seperate_objects == True:
         image_path /= obj.name
     
-    image.filepath = image_path / (obj.name+"_"+texture_type+".png")
+    image.filepath = str(image_path / (obj.name+"_"+texture_type+".png"))
     image.file_format = 'PNG'
     
     for mat in obj.material_slots:
