@@ -1,11 +1,14 @@
 # Blender 2.8 Object Exporter
-This plugin is designed to improve the export process from blender to any external software by automaticly baking standard PBR texture maps, other maps that are useful for texturing, and exporting meshes.
+This plugin is designed to improve the export process from blender to any external software by automaticly baking standard PBR texture maps, meshes, and other maps that are useful for texturing.
+
 ## How to install this plugin
-To install this plugin download *PBR_Exporter.py*, install it from the blender's preferences, and enable it.
+To install this plugin download *PBR_Exporter.py*, install it from the *Add-ons* panel in blender's preferences, and enable it.
+
 ## How to use this plugin
-Select the objects to export and the textures to export with them in the export panel, which is located in the render tab of the properties panel near the bake settings. Then select the output directory. (*note: the objects will be exported into a subdirectory of the output path named after the blend file*) Then press *Export Objects*. Blender will momentarily freeze while it is baking textures. Progress is logged to the console window while it is baking. Blender will then configure object materials to use the textures and export all of the objects to a single *.fbx* or into individual *.fbx*'s if 'Seperate Objects' is enabled. For fastest baking switch to GPU rendering. This plugin uses blender's cycles for baking textures so cycles quality setting will affect the baking speeds and quality for some maps (*AO, Combined, etc.*).
+First, Select the objects you want to export the textures of.
 
-
+Select the options you want in the export panel. *(In render properties)*
+<img width="197" alt="image" src="https://user-images.githubusercontent.com/45411688/175611326-212c3c53-a92c-491d-ad30-9b3ee6bb8d4a.png">
 
 ### Export Options
 - *Textures To Export:* The texture maps to export for each object. (*Combined will take a very long time*)
@@ -20,5 +23,13 @@ Select the objects to export and the textures to export with them in the export 
 	- *Combined:* Bake and export combined maps. (*Settings can be changed from cycles baking options*)
 - *Texture Resolution:* The size of the texture maps (1024 -> 1024 * 1024).
 - *Composite Maps:* Options to create maps that have Metalic, Roughness, AO, and Concavity channels  Currently each channel can be *Empty* or a *Curvature*, *AO*, *Metalness*, or *Roughness*
+	<img width="193" alt="image" src="https://user-images.githubusercontent.com/45411688/175611965-2db996d7-9501-4ff7-854d-9be3ce659a4c.png">
 - *Separate Objects:* Exports each of the selected objects to it's own file and subdirectory
 - *Generate UV Maps:* Generates a UV map for each selected object.
+
+
+### Exporting
+Then, if you want to see the progress open the console *(Window > Toggle Console)*, and click the *Export Maps* button. This will take a while. Blender will momentarily freeze while it is baking textures.
+
+After it finishes you will have an your objects export somthing like these.
+
