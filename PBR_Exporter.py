@@ -481,14 +481,15 @@ def SaveImage(obj, texture_type):
     try:
         image.save()
     except:
+        base_path = pathlib.Path(bpy.context.scene.render.filepath) / pathlib.Path(bpy.data.filepath).stem
         try:
             if bpy.context.window_manager.all_export_settings.seperate_objects == True:
-                os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name)
+                os.mkdir(base_path / obj.name)
             else:
-                os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])
+                os.mkdir(base_path)
         except:
-            os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])
-            os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name)
+            os.mkdir(base_path)
+            os.mkdir(base_path / obj.name)
         image.save()
 
 def SetupMaterialExport(obj):
@@ -555,13 +556,12 @@ def ConfigureMaterials(obj, texture_type):
     bpy.ops.image.new(name=obj.name+"_"+texture_type, width=resoulution, height=resoulution)
 
     image = bpy.data.images[obj.name+"_"+texture_type]
-    
+
+    image_path = pathlib.Path(bpy.context.scene.render.filepath) / pathlib.Path(bpy.data.filepath).stem
     if bpy.context.window_manager.all_export_settings.seperate_objects == True:
-        subdir = bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name
-    else:
-        subdir = bpy.data.filepath.split("\\")[-1].split(".")[0]
+        image_path /= obj.name
     
-    image.filepath = bpy.context.scene.render.filepath + subdir + "\\" + obj.name+"_"+texture_type+".png"
+    image.filepath = image_path / (obj.name+"_"+texture_type+".png")
     image.file_format = 'PNG'
     
     for mat in obj.material_slots:
