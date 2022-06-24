@@ -3,12 +3,10 @@ bl_info = {
     "category": "Export",
     "blender": (2, 90, 0),
     "author" : "Aetheris",
-    "version" : (2, 0, 0),
+    "version" : (2, 1, 0),
     "description" :
             "Bake and Export Textures and Meshes",
 }
-
-
 
 
 import bpy
@@ -17,6 +15,7 @@ import shutil
 import sys
 import random
 import numpy
+import pathlib
 
 
 class BakeObjects(bpy.types.Operator):
@@ -42,7 +41,8 @@ class BakeObjects(bpy.types.Operator):
         objnumber = len(selection)
         
         texture_number = 0
-        
+
+        blender_file_name = pathlib.Path(bpy.data.filepath).stem
         
         if options.use_normal == True:
             texture_number += 1
@@ -115,29 +115,25 @@ class BakeObjects(bpy.types.Operator):
                     SetupMaterialExport(obj)
                     
                 if options.seperate_objects == True:
-                    
                     try:
-                        path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
-                            
-                        bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
-                    
+                        path = pathlib.Path(bpy.context.scene.render.filepath)
+                        path = path / blender_file_name / obj.name / obj.name
+                        path.suffix = ".fbx" 
+                        bpy.ops.export_scene.fbx(filepath=path, use_selection=True)
+
                     except:    
-                        
+                        path = pathlib.Path(bpy.context.scene.render.filepath) / blender_file_name / obj.name
                         try:
-                            os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])   
+                            os.mkdir(bpy.context.scene.render.filepath + blender_file_name)   
                         except:
                             pass
                         
-                        try:            
-                            path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
-                                
-                            bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                        try:
+                            bpy.ops.export_scene.fbx(filepath=path / (obj.name + ".fbx"), use_selection=True)
                             
                         except:    
-                            os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name)        
-                            path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0] + "\\" + obj.name+ "\\" + obj.name
-                                
-                            bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
+                            os.mkdir(path)
+                            bpy.ops.export_scene.fbx(filepath=path / (obj.name + ".fbx"), use_selection=True)
                             
                 
         if options.use_material_id == True:
@@ -171,7 +167,7 @@ class BakeObjects(bpy.types.Operator):
                     print("Failed to reconfigure materials on", obj.name)
                 
         if options.seperate_objects == False:
-            path = bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0]+ "\\" + bpy.data.filepath.split("\\")[-1].split(".")[0]
+            path = bpy.context.scene.render.filepath + blender_file_name+ "\\" + blender_file_name
             print(path)
             SelectObjects(selection)
             
@@ -179,7 +175,7 @@ class BakeObjects(bpy.types.Operator):
                 bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
             
             except:
-                os.mkdir(bpy.context.scene.render.filepath + bpy.data.filepath.split("\\")[-1].split(".")[0])
+                os.mkdir(bpy.context.scene.render.filepath + blender_file_name)
                 
                 bpy.ops.export_scene.fbx(filepath=path+".fbx", use_selection=True)
         if bpy.context.window_manager.all_export_settings.number_of_maps > 0:
