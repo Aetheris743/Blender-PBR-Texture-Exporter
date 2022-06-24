@@ -17,6 +17,13 @@ import random
 import numpy
 import pathlib
 
+## TODO
+## Testing of new path system
+## TODO LATER
+## Update to remove try/catch statements and just check first
+## Add comments to functions
+## Add test-files to quickly test the plugin functionality
+## Add material-only export
 
 class BakeObjects(bpy.types.Operator):
     """Bake and export selected scene objects"""
