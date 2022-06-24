@@ -31,5 +31,37 @@ Select the options you want in the export panel. *(In render properties)*
 ### Exporting
 Then, if you want to see the progress open the console *(Window > Toggle Console)*, and click the *Export Maps* button. This will take a while. Blender will momentarily freeze while it is baking textures.
 
-After it finishes you will have an your objects export somthing like these.
-
+After it finishes you will have an your objects export somthing like this
+```
+Blend-file Name
+├───Object_1
+│       Object_1.fbx
+│       Object_1_Albedo.png
+│       Object_1_AO.png
+│       Object_1_Custom.png
+│       Object_1_Emission.png
+│		...
+├───Object_2
+│       Object_2.fbx
+│       Object_2_Albedo.png
+│       Object_2_AO.png
+│       Object_2_Custom.png
+│       Object_2_Emission.png
+│	    ...
+├─ etc...
+```
+or this depending on your settings.
+```
+Blend-file Name
+	Object_1_Albedo.png
+	Object_1_AO.png
+	Object_1_Custom.png
+	Object_1_Metalness.png
+	Object_1_Normal.png
+	Object_1_Roughness.png
+	Object_2_Albedo.png
+	Object_2_AO.png
+	Object_2_Custom.png
+	...
+	Blend-file Name.fbx
+```
