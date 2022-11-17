@@ -15,7 +15,6 @@ import sys
 import shutil
 import os
 import bpy
-=======
 """ 
 MIT License
 
@@ -164,12 +163,12 @@ class BakeObjects(bpy.types.Operator):
 
                         try:
                             bpy.ops.export_scene.fbx(filepath=str(
-                                path) / (obj.name + ".fbx"), use_selection=True)
+                                path / (obj.name + ".fbx")), use_selection=True)
 
                         except:
                             os.mkdir(path)
                             bpy.ops.export_scene.fbx(filepath=str(
-                                path) / (obj.name + ".fbx"), use_selection=True)
+                                path / (obj.name + ".fbx")), use_selection=True)
 
         if options.use_material_id == True:
             colors = []
